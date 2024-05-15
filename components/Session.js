@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PaperProvider, TextInput, Text, Button, Portal, Modal, IconButton } from "react-native-paper";
-import { FlatList, View, StyleSheet, StatusBar } from "react-native";
+import { FlatList, View, StyleSheet, StatusBar, Alert } from "react-native";
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import FirebaseConfig from '../firebaseConfig'
 import { useNavigation } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const db = getFirestore();
 
-export default function Session({ exercises }) {
+export default function Session({ exercises, setExercises }) {
     const navigation = useNavigation();
 
     const [workout, setWorkout] = useState([]);
@@ -30,7 +30,6 @@ export default function Session({ exercises }) {
     const handleCheckPress = (exerciseName) => {
 
         if (weightInputs[exerciseName] !== undefined && repsInputs[exerciseName] !== undefined) {
-            //asetetaan painetun napin arvo trueksi
             setButtonPressed(prevState => ({
                 ...prevState,
                 [exerciseName]: true
@@ -38,7 +37,19 @@ export default function Session({ exercises }) {
             const newExercise = { name: exerciseName, weight: weightInputs[exerciseName], reps: repsInputs[exerciseName] };
             setWorkout(prevWorkout => [...prevWorkout, newExercise]);
             console.log(newExercise);
+        } else {
+            Alert.alert(
+                "Empty values",
+                "Type in weight and reps before saving",
+                [
+                    {
+                        text: "Ok",
+                    }
+                ],
+                { cancelable: false }
+            );
         }
+
     };
     const handleWeightChange = (value, exerciseName) => {
         //asetetaan tietyn exercisen paino
@@ -60,7 +71,57 @@ export default function Session({ exercises }) {
     };
     const handleRemoveExercise = (exerciseName) => {
         setWorkout(prevWorkout => prevWorkout.filter(exercise => exercise.name !== exerciseName));
+        setButtonPressed(prevState => ({
+            ...prevState,
+            [exerciseName]: false
+        }));
+        setWeightInputs(prevState => ({
+            ...prevState,
+            [exerciseName]: ''
+        }));
+        setRepsInputs(prevState => ({
+            ...prevState,
+            [exerciseName]: ''
+        }));
+
     };
+    const handleFilterExercise = (exercise) => {
+        const existingExercise = workout.find(item => item.name === exercise);
+        if (existingExercise == undefined) {
+            if (weightInputs[exercise] == undefined && repsInputs[exercise] == undefined) {
+                setExercises(prevExercises => prevExercises.filter(exercises => exercises !== exercise))
+            } else {
+                Alert.alert(
+                    "Are you sure?",
+                    "Data will be lost from this exercise",
+                    [
+                        {
+                            text: "Cancel",
+                        },
+                        {
+                            text: "Yes", onPress: () => setExercises(prevExercises => prevExercises.filter(exercises => exercises !== exercise))
+                        },
+                    ],
+                    { cancelable: false }
+                );
+            }
+        } else {
+            if (existingExercise.name === exercise) {
+                Alert.alert(
+                    "Delete blocked",
+                    "First go delete it from Save workout window",
+                    [
+                        {
+                            text: "Ok",
+                        }
+                    ],
+                    { cancelable: false }
+                );
+            }
+        }
+
+
+    }
     return (
         <>
             <PaperProvider>
@@ -70,8 +131,9 @@ export default function Session({ exercises }) {
                         renderItem={({ item }) =>
                             <>
                                 <View style={styles.renderItem}>
-                                    <Text variant="titleLarge" style={{ color: 'white' }}>{item}</Text>
+                                    <Text variant="titleLarge" style={{ color: 'white', marginLeft: 65 }}>{item}</Text>
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <IconButton icon='delete' iconColor="#D14100" size={30} style={{ marginTop: 50, marginRight: 15 }} onPress={() => handleFilterExercise(item)} />
                                         <View style={styles.renderFlex}>
                                             <Text
                                                 variant='labelLarge'
@@ -93,7 +155,7 @@ export default function Session({ exercises }) {
                                         <Button
                                             icon='check'
                                             mode='contained'
-                                            style={{ justifyContent: 'flex-end', alignItems: 'flex-end', marginTop: 50, marginLeft: 150 }}
+                                            style={{ justifyContent: 'flex-end', alignItems: 'flex-end', marginTop: 50, marginLeft: 100 }}
                                             contentStyle={{ height: 50, width: 50 }}
                                             buttonColor={buttonPressed[item] ? 'green' : 'gray'}
                                             onPress={() => handleCheckPress(item)}

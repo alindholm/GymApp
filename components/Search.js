@@ -117,7 +117,8 @@ export default function Search({ route }) {
                         </Modal>
                     </Portal>
                     <Session
-                        exercises={selectedExercises} />
+                        exercises={selectedExercises}
+                        setExercises={setSelectedExercises} />
                 </PaperProvider>
                 <StatusBar style="auto" />
             </View>

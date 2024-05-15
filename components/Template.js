@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { List, PaperProvider, TextInput, Text, Button, Portal, Modal, IconButton } from "react-native-paper";
-import { FlatList, View, StyleSheet, StatusBar } from "react-native";
+import { FlatList, View, StyleSheet, StatusBar, Alert } from "react-native";
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import FirebaseConfig from '../firebaseConfig'
 import { useNavigation } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const db = getFirestore();
 
-export default function Template({ exercises }) {
+export default function Template({ exercises, setExercises }) {
     const navigation = useNavigation();
 
     const [template, setTemplate] = useState([]);
@@ -47,7 +47,33 @@ export default function Template({ exercises }) {
     };
     const handleRemoveExercise = (exerciseName) => {
         setTemplate(prevTemplate => prevTemplate.filter(exercise => exercise.name !== exerciseName));
+        setButtonPressed(prevState => ({
+            ...prevState,
+            [exerciseName]: false
+        }));
     };
+    const handleFilterExercise = (exercise) => {
+        const existingExercise = template.find(item => item.name === exercise);
+        console.log(existingExercise)
+        if (existingExercise == undefined) {
+            setExercises(prevExercises => prevExercises.filter(exercises => exercises.data.name !== exercise))
+        } else {
+            if (existingExercise.name === exercise) {
+                console.log(exercises)
+                Alert.alert(
+                    "Delete blocked",
+                    "First go delete it from Save workout window",
+                    [
+                        {
+                            text: "Ok",
+                        }
+                    ],
+                    { cancelable: false }
+                );
+
+            }
+        }
+    }
     return (
         <>
 
@@ -56,8 +82,9 @@ export default function Template({ exercises }) {
                 renderItem={({ item }) =>
                     <>
                         <View style={styles.renderItem}>
-                            <Text variant="titleLarge" style={{ color: 'white' }}>{item.data.name}</Text>
+                            <Text variant="titleLarge" style={{ color: 'white', marginLeft: 65 }}>{item.data.name}</Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <IconButton icon='delete' iconColor="#D14100" size={30} style={{ marginTop: 50, marginRight: 15 }} onPress={() => handleFilterExercise(item.data.name)} />
                                 <View style={styles.renderFlex}>
                                     <Text
                                         variant='labelLarge'
@@ -77,7 +104,7 @@ export default function Template({ exercises }) {
                                 <Button
                                     icon='check'
                                     mode='contained'
-                                    style={{ justifyContent: 'flex-end', alignItems: 'flex-end', marginTop: 50, marginLeft: 150 }}
+                                    style={{ justifyContent: 'flex-end', alignItems: 'flex-end', marginTop: 50, marginLeft: 100 }}
                                     contentStyle={{ height: 50, width: 50 }}
                                     buttonColor={buttonPressed[item.data.name] ? 'green' : 'gray'}
                                     onPress={() => handleCheckPress(item.data.name)}
